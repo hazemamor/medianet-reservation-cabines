@@ -1,0 +1,71 @@
+<app-page-header titre="Disponibilite des cabines" sousTitre="Calendrier par cabine et liste des reservations"></app-page-header>
+
+<div class="page-container">
+  <div style="display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button mat-icon-button (click)="reculer()" matTooltip="Periode precedente">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button mat-stroked-button (click)="revenirAujourdhui()">Aujourd'hui</button>
+      <button mat-icon-button (click)="avancer()" matTooltip="Periode suivante">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:16px; margin-bottom:16px; font-size:13px;">
+    <span><span class="legende-pastille" style="background:#4caf50;"></span> Disponible</span>
+    <span><span class="legende-pastille" style="background:#ffb74d;"></span> Partiellement reservee</span>
+    <span><span class="legende-pastille" style="background:#e57373;"></span> Complete</span>
+    <span><span class="legende-pastille" style="background:#b0bec5;"></span> Maintenance</span>
+  </div>
+
+  <div *ngIf="chargement()" style="text-align:center; margin-top:48px;">
+    <mat-spinner style="margin:0 auto;"></mat-spinner>
+  </div>
+
+  <div *ngIf="!chargement()" style="overflow-x:auto;">
+    <table class="grille-disponibilite">
+      <thead>
+        <tr>
+          <th class="colonne-cabine">Cabine</th>
+          <th *ngFor="let jour of jours()">
+            {{ jour | date:'EEE' }}<br>
+            <span style="font-weight:400;">{{ jour | date:'dd/MM' }}</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cabine of cabines()">
+          <td class="colonne-cabine">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <img *ngIf="cabine.photoUrl" [src]="cabine.photoUrl" [alt]="cabine.nom"
+                   style="width:32px; height:32px; border-radius:6px; object-fit:cover;">
+              <div *ngIf="!cabine.photoUrl" style="width:32px; height:32px; border-radius:6px; background:#eef2f5;
+                          display:flex; align-items:center; justify-content:center;">
+                <i class="bi bi-image" style="color:#b0bec5; font-size:14px;"></i>
+              </div>
+              <div>
+                <div style="font-weight:600;">{{ cabine.nom }}</div>
+                <div style="font-size:11px; color:#888;">{{ cabine.numero }}</div>
+              </div>
+            </div>
+          </td>
+
+          <td *ngFor="let jour of jours()"
+              class="cellule-dispo"
+              [ngClass]="'cellule-' + cellule(cabine, jour).statut"
+              (click)="ouvrirDetail(cabine, jour)"
+              [matTooltip]="cellule(cabine, jour).statut === 'MAINTENANCE' ? 'En maintenance' : (cellule(cabine, jour).nombreReservations + ' reservation(s) - cliquer pour le detail')">
+            <i class="bi bi-check-lg" *ngIf="cellule(cabine, jour).statut === 'DISPONIBLE'"></i>
+            <i class="bi bi-tools" *ngIf="cellule(cabine, jour).statut === 'MAINTENANCE'"></i>
+            <span *ngIf="cellule(cabine, jour).statut === 'PARTIEL' || cellule(cabine, jour).statut === 'COMPLET'">
+              {{ cellule(cabine, jour).nombreReservations }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

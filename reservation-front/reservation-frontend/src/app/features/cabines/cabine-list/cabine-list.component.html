@@ -1,0 +1,164 @@
+<app-page-header
+  titre="Cabines de travail"
+  [sousTitre]="stats().disponibles + ' cabine(s) disponible(s) aujourd\'hui'">
+</app-page-header>
+
+<div class="page-container">
+
+  <!-- Panneau de recherche -->
+  <div class="search-panel">
+    <form [formGroup]="rechercheForm">
+      <div class="search-grid">
+        <div class="search-field">
+          <label>Participants</label>
+          <div class="search-input-icon">
+            <i class="bi bi-people"></i>
+            <input type="number" min="1" formControlName="nombrePersonnes" placeholder="Nombre">
+          </div>
+        </div>
+
+        <div class="search-field">
+          <label>Date</label>
+          <div class="search-input-icon">
+            <i class="bi bi-calendar3"></i>
+            <input matInput [matDatepicker]="picker" [matDatepickerFilter]="filtreDateMin" formControlName="dateJour" readonly (click)="picker.open()">
+            <mat-datepicker #picker></mat-datepicker>
+          </div>
+          <p class="search-error" *ngIf="erreurDatePassee">La date ne peut pas etre anterieure a aujourd'hui</p>
+        </div>
+
+        <div class="search-field">
+          <label>De</label>
+          <input type="time" formControlName="heureDebut" class="search-input">
+        </div>
+
+        <div class="search-field">
+          <label>A</label>
+          <input type="time" formControlName="heureFin" class="search-input">
+        </div>
+      </div>
+
+      <p class="search-error" *ngIf="erreurHeures">
+        <i class="bi bi-exclamation-triangle-fill"></i> L'heure de debut doit etre avant l'heure de fin.
+      </p>
+
+      <div class="search-equip-label">Equipements souhaites</div>
+      <div class="search-equip-row" formArrayName="equipements">
+        <button type="button" *ngFor="let eq of equipementsDisponibles(); let i = index"
+                class="equip-pill" [class.equip-pill--active]="equipementActif(i)"
+                (click)="toggleEquipement(i)">
+          {{ eq.nom }}
+        </button>
+      </div>
+
+      <div class="search-actions">
+        <button type="button" class="btn-search-primary" (click)="rechercher()">
+          <i class="bi bi-search"></i> Rechercher
+        </button>
+        <button type="button" class="btn-search-ai" [class.btn-search-ai--active]="recommandation()"
+                (click)="demanderRecommandation()" [disabled]="rechercheRecommandation()">
+          <i class="bi bi-stars"></i> Recommandation IA
+        </button>
+        <button type="button" class="btn-search-reset" (click)="reinitialiser()">Reinitialiser</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Bandeau recommandation IA -->
+  <div class="ai-banner" *ngIf="recommandation()">
+    <div class="ai-banner-icon"><i class="bi bi-stars"></i></div>
+    <div class="ai-banner-text">
+      <p class="ai-banner-title">Recommandation IA &mdash; {{ recommandation()!.cabineNom }}</p>
+      <p class="ai-banner-desc">
+        Score de pertinence : <strong>{{ recommandation()!.score }}%</strong> &mdash; {{ recommandation()!.justification }}
+      </p>
+    </div>
+    <div class="ai-banner-score">{{ recommandation()!.score }}%</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-dot-wrap" style="background:#dcfce7;"><span class="stat-dot" style="background:#22c55e;"></span></div>
+      <div>
+        <p class="stat-value" style="color:#16a34a;">{{ stats().disponibles }}</p>
+        <p class="stat-label">Disponibles</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-dot-wrap" style="background:#fef3c7;"><span class="stat-dot" style="background:#f59e0b;"></span></div>
+      <div>
+        <p class="stat-value" style="color:#d97706;">{{ stats().occupees }}</p>
+        <p class="stat-label">Occupees</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-dot-wrap" style="background:#fee2e2;"><span class="stat-dot" style="background:#ef4444;"></span></div>
+      <div>
+        <p class="stat-value" style="color:#dc2626;">{{ stats().maintenance }}</p>
+        <p class="stat-label">Maintenance</p>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="chargement()" style="text-align:center; margin-top:48px;">
+    <mat-spinner style="margin:0 auto;"></mat-spinner>
+  </div>
+
+  <!-- Grille des cabines -->
+  <div class="cabin-grid" *ngIf="!chargement()">
+    <div class="cabin-card" *ngFor="let cabine of cabines()">
+      <div class="cabin-card-image" [routerLink]="['/cabines', cabine.id]">
+        <img *ngIf="cabine.photoUrl" [src]="cabine.photoUrl" [alt]="cabine.nom">
+        <div *ngIf="!cabine.photoUrl" class="cabin-card-image-placeholder">
+          <i class="bi bi-image"></i>
+        </div>
+        <div class="cabin-card-gradient"></div>
+
+        <span class="cabin-badge-code">{{ cabine.numero }}</span>
+        <span class="badge-statut" [ngClass]="statutClasse(cabine)">{{ statutLabel(cabine) }}</span>
+        <span class="cabin-badge-capacite"><i class="bi bi-people-fill"></i> {{ cabine.capacite }} pers.</span>
+      </div>
+
+      <div class="cabin-card-body">
+        <h3 class="cabin-card-name">{{ cabine.nom }}</h3>
+        <p class="cabin-card-loc">{{ cabine.localisation }}</p>
+
+        <div class="cabin-card-equip">
+          <span class="mini-chip" *ngFor="let eq of equipementsAffiches(cabine)">{{ eq }}</span>
+          <span class="mini-chip" *ngIf="nombreEquipementsSupplementaires(cabine) > 0">
+            +{{ nombreEquipementsSupplementaires(cabine) }}
+          </span>
+        </div>
+
+        <p class="cabin-card-horaires">
+          <i class="bi bi-clock"></i>
+          {{ cabine.heureDisponibiliteDebut?.substring(0,5) }} - {{ cabine.heureDisponibiliteFin?.substring(0,5) }}
+        </p>
+
+        <p class="cabin-card-warning" *ngIf="estIndisponibleSurCreneau(cabine)">
+          <i class="bi bi-exclamation-circle-fill"></i> Deja reservee sur ce creneau
+        </p>
+
+        <div class="cabin-card-actions">
+          <button class="btn-voir-details" [routerLink]="['/cabines', cabine.id]">Voir details</button>
+          <button *ngIf="cabine.etat === 'DISPONIBLE' && !estIndisponibleSurCreneau(cabine)"
+                  class="btn-reserver"
+                  [disabled]="!peutReserver() || reservationEnCours() === cabine.id"
+                  (click)="reserver(cabine)">
+            <span *ngIf="reservationEnCours() !== cabine.id">Reserver</span>
+            <mat-spinner *ngIf="reservationEnCours() === cabine.id" diameter="16" style="margin:0 auto;"></mat-spinner>
+          </button>
+          <div *ngIf="cabine.etat !== 'DISPONIBLE' || estIndisponibleSurCreneau(cabine)" class="btn-indisponible">
+            Indisponible
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cabin-empty" *ngIf="cabines().length === 0">
+      <p class="cabin-empty-title">Aucune cabine trouvee</p>
+      <p class="cabin-empty-sub">Modifiez vos criteres de recherche</p>
+    </div>
+  </div>
+</div>

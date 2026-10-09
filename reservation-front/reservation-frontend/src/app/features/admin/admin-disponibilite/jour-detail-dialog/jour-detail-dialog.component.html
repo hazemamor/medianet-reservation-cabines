@@ -1,0 +1,97 @@
+<h2 mat-dialog-title style="display:flex; align-items:center; gap:10px;">
+  <i class="bi bi-calendar3" style="color:var(--medianet-cyan);"></i>
+  {{ data.cabineNom }} ({{ data.cabineNumero }}) &mdash; {{ data.date | date:'EEEE dd MMMM yyyy' }}
+</h2>
+
+<mat-dialog-content>
+  <p style="color:#5a6b78; margin-top:-4px;">
+    <i class="bi bi-clock" style="margin-right:6px;"></i>
+    Disponible de {{ data.heureDisponibiliteDebut.substring(0,5) }} a {{ data.heureDisponibiliteFin.substring(0,5) }}
+  </p>
+
+  <div *ngIf="data.reservations.length === 0" style="padding:24px 0; text-align:center; color:#4caf50;">
+    <i class="bi bi-check-circle-fill" style="font-size:32px;"></i>
+    <p>Aucune reservation ce jour-la : cabine entierement disponible.</p>
+  </div>
+
+  <div *ngFor="let r of data.reservations"
+       style="display:flex; align-items:center; justify-content:space-between; gap:12px;
+              padding:12px; border-radius:10px; background:#f7f9fb; margin-bottom:10px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <mat-chip [color]="r.statut === 'ANNULEE' ? 'warn' : (r.statut === 'CONFIRMEE' ? 'primary' : undefined)" selected>
+        {{ r.dateDebut | date:'HH:mm' }} - {{ r.dateFin | date:'HH:mm' }}
+      </mat-chip>
+      <div>
+        <div style="font-weight:600;">{{ r.employePrenom }} {{ r.employeNom }}</div>
+        <div style="font-size:12px; color:#888;">{{ r.employeEmail }}</div>
+      </div>
+      <span style="font-size:12px; color:#888;">{{ r.statut }}</span>
+    </div>
+
+    <button mat-icon-button color="warn" *ngIf="peutAnnuler(r)"
+            [disabled]="actionEnCours() === r.id"
+            (click)="annuler(r)" title="Annuler cette reservation">
+      <mat-icon>cancel</mat-icon>
+    </button>
+    <span *ngIf="!peutAnnuler(r) && r.statut !== 'ANNULEE'" style="font-size:11px; color:#aaa;">
+      Non annulable (deja passee)
+    </span>
+  </div>
+
+  <hr style="border:none; border-top:1px solid #e6e9ec; margin:16px 0;">
+
+  <div *ngIf="jourPasse" style="color:#aaa; font-size:13px; text-align:center; padding:8px 0;">
+    <i class="bi bi-info-circle"></i> Impossible de reserver pour une date passee.
+  </div>
+
+  <div *ngIf="!jourPasse && jourDejaComplet()" style="color:#c0392b; font-size:13px; text-align:center; padding:8px 0; background:#fdf1f0; border-radius:8px;">
+    <i class="bi bi-exclamation-triangle"></i> Cette cabine est déjà entièrement réservée ce jour-là.
+    Annulez une réservation existante ci-dessus pour libérer un créneau avant d'en créer une nouvelle.
+  </div>
+
+  <ng-container *ngIf="!jourPasse && !jourDejaComplet()">
+    <button mat-stroked-button color="primary" *ngIf="!afficherFormulaire()" (click)="afficherFormulaire.set(true)" style="width:100%;">
+      <mat-icon>add</mat-icon> Réserver pour un employé
+    </button>
+
+    <form *ngIf="afficherFormulaire()" [formGroup]="formNouvelleReservation" (ngSubmit)="reserverPourEmploye()"
+          style="display:flex; flex-direction:column; gap:8px; background:#f7f9fb; padding:14px; border-radius:10px;">
+      <div style="font-weight:600; margin-bottom:2px;">
+        <i class="bi bi-person-plus" style="color:var(--medianet-cyan);"></i> Nouvelle réservation
+      </div>
+
+      <mat-form-field appearance="outline" style="width:100%;">
+        <mat-label>Employé</mat-label>
+        <mat-select formControlName="utilisateurId">
+          <mat-option *ngIf="chargementEmployes()" disabled>Chargement...</mat-option>
+          <mat-option *ngFor="let e of employes()" [value]="e.id">
+            {{ e.prenom }} {{ e.nom }} ({{ e.email }})
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div style="display:flex; gap:8px;">
+        <mat-form-field appearance="outline" style="flex:1;">
+          <mat-label>Heure de début</mat-label>
+          <input matInput type="time" formControlName="heureDebut">
+        </mat-form-field>
+        <mat-form-field appearance="outline" style="flex:1;">
+          <mat-label>Heure de fin</mat-label>
+          <input matInput type="time" formControlName="heureFin">
+        </mat-form-field>
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button mat-button type="button" (click)="afficherFormulaire.set(false)">Annuler</button>
+        <button mat-raised-button color="primary" type="submit" [disabled]="creationEnCours()">
+          <mat-icon *ngIf="!creationEnCours()">check</mat-icon>
+          {{ creationEnCours() ? 'Création...' : 'Confirmer la réservation' }}
+        </button>
+      </div>
+    </form>
+  </ng-container>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-raised-button color="primary" (click)="fermer()">Fermer</button>
+</mat-dialog-actions>

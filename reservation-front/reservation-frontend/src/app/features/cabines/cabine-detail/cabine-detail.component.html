@@ -1,0 +1,165 @@
+<app-page-header titre="Detail de la cabine" sousTitre="Photo, disponibilite et reservation"></app-page-header>
+
+<div class="page-container">
+  <a routerLink="/cabines" class="btn-retour">
+    <i class="bi bi-arrow-left"></i> Retour a la liste des cabines
+  </a>
+
+  <div *ngIf="chargement()" style="text-align:center; margin-top:48px;">
+    <mat-spinner style="margin:0 auto;"></mat-spinner>
+  </div>
+
+  <div *ngIf="!chargement() && cabine() as c" style="display:flex; gap:32px; flex-wrap:wrap;">
+
+    <!-- Colonne gauche : photo + infos -->
+    <div style="flex:1 1 400px;">
+      <div *ngIf="c.photoUrl" style="border-radius:12px; overflow:hidden; margin-bottom:16px;">
+        <img [src]="c.photoUrl" [alt]="c.nom" style="width:100%; height:320px; object-fit:cover; display:block;">
+      </div>
+      <div *ngIf="!c.photoUrl" style="border-radius:12px; height:320px; background:#eef2f5; display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
+        <i class="bi bi-image" style="font-size:64px; color:#b0bec5;"></i>
+      </div>
+
+      <h2 style="margin-bottom:4px;">{{ c.nom }} ({{ c.numero }})</h2>
+      <span class="badge-statut" [class.badge-statut--dispo]="c.etat === 'DISPONIBLE'"
+            [class.badge-statut--occupee]="c.etat === 'RESERVEE'"
+            [class.badge-statut--maintenance]="c.etat === 'MAINTENANCE'"
+            style="position:static; display:inline-block; margin-bottom:8px;">
+        {{ c.etat === 'DISPONIBLE' ? 'Disponible' : (c.etat === 'RESERVEE' ? 'Occupee' : 'Maintenance') }}
+      </span>
+      <p style="color:var(--mn-muted-foreground); margin-top:0;">
+        <i class="bi bi-geo-alt-fill" style="margin-right:6px;"></i>{{ c.localisation }}
+      </p>
+
+      <p>{{ c.description }}</p>
+
+      <div style="display:flex; gap:24px; flex-wrap:wrap; margin:16px 0;">
+        <div>
+          <div style="font-size:13px; color:#888;">Capacite</div>
+          <div style="font-size:18px; font-weight:600;">
+            <i class="bi bi-people-fill" style="margin-right:6px; color:var(--medianet-cyan);"></i>{{ c.capacite }} places
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px; color:#888;">Etat</div>
+          <div style="font-size:18px; font-weight:600;">{{ c.etat }}</div>
+        </div>
+        <div>
+          <div style="font-size:13px; color:#888;">Disponibilite</div>
+          <div style="font-size:18px; font-weight:600;">
+            <i class="bi bi-clock-fill" style="margin-right:6px; color:var(--medianet-orange);"></i>
+            {{ c.heureDisponibiliteDebut?.substring(0,5) }} - {{ c.heureDisponibiliteFin?.substring(0,5) }}
+          </div>
+        </div>
+      </div>
+
+      <p><strong>Equipements :</strong></p>
+      <mat-chip-set>
+        <mat-chip *ngFor="let eq of c.equipements">{{ eq }}</mat-chip>
+        <span *ngIf="c.equipements.length === 0" style="color:#888;">Aucun equipement renseigne</span>
+      </mat-chip-set>
+    </div>
+
+    <!-- Colonne droite : formulaire de reservation -->
+    <div style="flex:1 1 340px;">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Reserver cette cabine</mat-card-title>
+          <mat-card-subtitle>
+            Disponible uniquement entre {{ c.heureDisponibiliteDebut?.substring(0,5) }}
+            et {{ c.heureDisponibiliteFin?.substring(0,5) }}
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <form [formGroup]="reservationForm">
+            <mat-form-field class="full-width" appearance="outline">
+              <mat-label>Date</mat-label>
+              <input matInput [matDatepicker]="picker" [matDatepickerFilter]="filtreDateMin" formControlName="dateJour">
+              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+              <mat-error *ngIf="erreurDatePassee">La date ne peut pas etre anterieure a aujourd'hui</mat-error>
+            </mat-form-field>
+
+            <div style="display:flex; gap:12px;">
+              <mat-form-field appearance="outline" style="flex:1;">
+                <mat-label>Heure de debut</mat-label>
+                <input matInput type="time" formControlName="heureDebut">
+              </mat-form-field>
+              <mat-form-field appearance="outline" style="flex:1;">
+                <mat-label>Heure de fin</mat-label>
+                <input matInput type="time" formControlName="heureFin">
+              </mat-form-field>
+            </div>
+
+            <!-- Frise horaire : créneaux déjà réservés ce jour-là, pour faciliter le choix -->
+            <div *ngIf="reservationForm.value.dateJour" style="margin:4px 0 16px 0;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <span style="font-size:12px; color:#888; font-weight:600;">
+                  <i class="bi bi-bar-chart-steps" style="margin-right:4px;"></i>Créneaux du jour
+                </span>
+                <mat-spinner *ngIf="chargementCreneaux()" diameter="14"></mat-spinner>
+              </div>
+
+              <div style="position:relative; height:28px; background:#e8f6ea; border-radius:8px; overflow:hidden;">
+                <!-- créneaux déjà réservés -->
+                <div *ngFor="let cr of creneauxOccupes()"
+                     [style.left.%]="pourcentage(cr.heureDebut)"
+                     [style.width.%]="largeurSegment(cr.heureDebut, cr.heureFin)"
+                     style="position:absolute; top:0; bottom:0; background:#f4a3a3;"
+                     [title]="cr.heureDebut.substring(0,5) + ' - ' + cr.heureFin.substring(0,5) + ' déjà réservé'">
+                </div>
+                <!-- créneau actuellement sélectionné par l'employé -->
+                <div *ngIf="reservationForm.value.heureDebut && reservationForm.value.heureFin && reservationForm.value.heureDebut < reservationForm.value.heureFin"
+                     [style.left.%]="pourcentage(reservationForm.value.heureDebut)"
+                     [style.width.%]="largeurSegment(reservationForm.value.heureDebut, reservationForm.value.heureFin)"
+                     [style.background]="selectionChevaucheCreneauOccupe ? 'rgba(244,67,54,0.35)' : 'rgba(0,184,212,0.35)'"
+                     [style.border]="selectionChevaucheCreneauOccupe ? '2px solid #f44336' : '2px solid var(--medianet-cyan)'"
+                     style="position:absolute; top:0; bottom:0; border-radius:4px; box-sizing:border-box;">
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:11px; color:#aaa; margin-top:2px;">
+                <span>{{ cabine()?.heureDisponibiliteDebut?.substring(0,5) }}</span>
+                <span>{{ cabine()?.heureDisponibiliteFin?.substring(0,5) }}</span>
+              </div>
+
+              <div style="display:flex; gap:14px; font-size:11px; color:#888; margin-top:8px;">
+                <span><span style="display:inline-block; width:10px; height:10px; background:#f4a3a3; border-radius:2px; margin-right:4px;"></span>Déjà réservé</span>
+                <span><span style="display:inline-block; width:10px; height:10px; background:rgba(0,184,212,0.35); border:1.5px solid var(--medianet-cyan); border-radius:2px; margin-right:4px;"></span>Votre sélection</span>
+              </div>
+
+              <p *ngIf="creneauxOccupes().length === 0 && !chargementCreneaux()" style="color:#4caf50; font-size:12px; margin:8px 0 0 0;">
+                <i class="bi bi-check-circle-fill" style="margin-right:4px;"></i>Aucune réservation ce jour-là, la cabine est entièrement libre.
+              </p>
+              <p *ngIf="selectionChevaucheCreneauOccupe" style="color:#f44336; font-size:12px; margin:8px 0 0 0;">
+                <i class="bi bi-exclamation-triangle-fill" style="margin-right:4px;"></i>Votre créneau chevauche une réservation existante.
+              </p>
+            </div>
+
+            <p *ngIf="erreurHeures" style="color:#f44336; font-size:13px; margin-top:-8px;">
+              <i class="bi bi-exclamation-triangle-fill" style="margin-right:4px;"></i>
+              L'heure de debut doit etre avant l'heure de fin.
+            </p>
+            <p *ngIf="!erreurHeures && erreurHorsPlage" style="color:#f44336; font-size:13px; margin-top:-8px;">
+              <i class="bi bi-exclamation-triangle-fill" style="margin-right:4px;"></i>
+              Cette cabine n'est disponible que de {{ c.heureDisponibiliteDebut?.substring(0,5) }}
+              a {{ c.heureDisponibiliteFin?.substring(0,5) }}.
+            </p>
+
+            <button mat-raised-button color="accent" class="full-width" type="button"
+                    style="margin-top:12px; height:44px;"
+                    [disabled]="c.etat !== 'DISPONIBLE' || reservationEnCours() || selectionChevaucheCreneauOccupe"
+                    (click)="reserver()">
+              <mat-spinner *ngIf="reservationEnCours()" diameter="20" style="display:inline-block; margin-right:8px;"></mat-spinner>
+              <span *ngIf="!reservationEnCours()"><i class="bi bi-calendar-check" style="margin-right:6px;"></i>Reserver</span>
+            </button>
+
+            <p *ngIf="c.etat !== 'DISPONIBLE'" style="color:#f44336; font-size:13px; margin-top:8px;">
+              Cette cabine est actuellement en maintenance.
+            </p>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

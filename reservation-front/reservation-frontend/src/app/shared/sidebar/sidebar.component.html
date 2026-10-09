@@ -1,0 +1,52 @@
+<aside class="sidebar" [class.sidebar--collapsed]="!ouverte()" *ngIf="authService.isAuthenticated()">
+
+  <div class="sidebar-logo">
+    <img src="assets/logo-medianet.png" alt="Medianet" [style.max-width]="ouverte() ? '120px' : '32px'">
+  </div>
+
+  <nav class="sidebar-nav">
+    <a routerLink="/cabines" routerLinkActive="sidebar-link--active" class="sidebar-link">
+      <i class="bi bi-grid-3x3-gap-fill"></i>
+      <span *ngIf="ouverte()">Cabines</span>
+    </a>
+    <a routerLink="/reservations/historique" routerLinkActive="sidebar-link--active" class="sidebar-link">
+      <i class="bi bi-calendar-check"></i>
+      <span *ngIf="ouverte()">Mes reservations</span>
+    </a>
+
+    <ng-container *ngIf="authService.isAdmin()">
+      <div class="sidebar-section-title" *ngIf="ouverte()">Admin</div>
+      <a routerLink="/admin/cabines" routerLinkActive="sidebar-link--active" class="sidebar-link">
+        <i class="bi bi-building"></i>
+        <span *ngIf="ouverte()">Gerer les cabines</span>
+      </a>
+      <a routerLink="/admin/equipements" routerLinkActive="sidebar-link--active" class="sidebar-link">
+        <i class="bi bi-tools"></i>
+        <span *ngIf="ouverte()">Equipements</span>
+      </a>
+      <a routerLink="/admin/disponibilite" routerLinkActive="sidebar-link--active" class="sidebar-link">
+        <i class="bi bi-clock-history"></i>
+        <span *ngIf="ouverte()">Disponibilite</span>
+      </a>
+      <a routerLink="/admin/dashboard" routerLinkActive="sidebar-link--active" class="sidebar-link">
+        <i class="bi bi-bar-chart-fill"></i>
+        <span *ngIf="ouverte()">Dashboard</span>
+      </a>
+    </ng-container>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-avatar">{{ initiales }}</div>
+    <div class="sidebar-user-info" *ngIf="ouverte()">
+      <div class="sidebar-user-email">{{ authService.currentUser()?.email }}</div>
+      <div class="sidebar-user-role">{{ libelleRole }}</div>
+    </div>
+    <button class="sidebar-toggle" (click)="basculer()" title="Reduire/agrandir le menu">
+      <i class="bi" [class.bi-chevron-left]="ouverte()" [class.bi-chevron-right]="!ouverte()"></i>
+    </button>
+  </div>
+
+  <button class="sidebar-logout" (click)="deconnexion()" *ngIf="ouverte()">
+    <i class="bi bi-box-arrow-right"></i> Se deconnecter
+  </button>
+</aside>

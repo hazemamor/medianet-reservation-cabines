@@ -1,0 +1,178 @@
+<div class="login-v2-shell">
+
+  <!-- Panneau de marque (gauche) -->
+  <div class="login-v2-brand">
+    <div class="login-v2-mesh"></div>
+    <div class="login-v2-grid-overlay"></div>
+
+    <div class="login-v2-brand-content">
+      <img src="assets/logo-medianet.png" alt="Medianet" class="login-v2-logo">
+
+      <div class="login-v2-brand-middle">
+        <div class="login-v2-badge">
+          <span class="login-v2-badge-dot"></span>
+          Plateforme intelligente de reservation
+        </div>
+
+        <h1 class="login-v2-title">Reservation intelligente<br>des cabines de travail</h1>
+        <p class="login-v2-subtitle">
+          Centralisez, optimisez et automatisez la gestion de vos espaces de travail
+          grace a un moteur de recommandation IA et une authentification sans mot
+          de passe.
+        </p>
+
+        <div class="login-v2-features">
+          <div class="login-v2-feature">
+            <div class="login-v2-feature-icon">🤖</div>
+            <div>
+              <p class="login-v2-feature-title">IA de recommandation</p>
+              <p class="login-v2-feature-desc">Trouvez la cabine parfaite automatiquement</p>
+            </div>
+          </div>
+          <div class="login-v2-feature">
+            <div class="login-v2-feature-icon">🔐</div>
+            <div>
+              <p class="login-v2-feature-title">Acces OTP sans mot de passe</p>
+              <p class="login-v2-feature-desc">Connexion securisee via code email</p>
+            </div>
+          </div>
+          <div class="login-v2-feature">
+            <div class="login-v2-feature-icon">📅</div>
+            <div>
+              <p class="login-v2-feature-title">Reservation en temps reel</p>
+              <p class="login-v2-feature-desc">Disponibilite mise a jour instantanement</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-v2-stats">
+          <div><div class="login-v2-stat-value">100%</div><div class="login-v2-stat-label">Automatise</div></div>
+          <div><div class="login-v2-stat-value">0</div><div class="login-v2-stat-label">Conflit</div></div>
+          <div><div class="login-v2-stat-value">24/7</div><div class="login-v2-stat-label">Disponible</div></div>
+        </div>
+      </div>
+
+      <p class="login-v2-footer">© 2026 Medianet. Tous droits reserves.</p>
+    </div>
+  </div>
+
+  <!-- Panneau formulaire (droite) -->
+  <div class="login-v2-panel">
+    <div class="login-v2-panel-inner">
+
+      <div class="login-v2-mobile-logo">
+        <img src="assets/logo-medianet.png" alt="Medianet">
+      </div>
+
+      <!-- Indicateur d'etapes -->
+      <div class="login-v2-steps">
+        <div class="login-v2-step">
+          <div class="login-v2-step-circle" [class.login-v2-step-circle--done]="etape() === 'OTP'"
+               [class.login-v2-step-circle--active]="etape() === 'EMAIL'">
+            <span *ngIf="etape() === 'OTP'">✓</span>
+            <span *ngIf="etape() !== 'OTP'">1</span>
+          </div>
+          <span class="login-v2-step-label" [class.login-v2-step-label--active]="etape() === 'EMAIL'">Email</span>
+        </div>
+        <div class="login-v2-step-line" [class.login-v2-step-line--done]="etape() === 'OTP'"></div>
+        <div class="login-v2-step">
+          <div class="login-v2-step-circle" [class.login-v2-step-circle--active]="etape() === 'OTP'">2</div>
+          <span class="login-v2-step-label" [class.login-v2-step-label--active]="etape() === 'OTP'">Code OTP</span>
+        </div>
+        <div class="login-v2-step-line"></div>
+        <div class="login-v2-step">
+          <div class="login-v2-step-circle">3</div>
+          <span class="login-v2-step-label">Acces</span>
+        </div>
+      </div>
+
+      <!-- Carte -->
+      <div class="login-v2-card">
+        <div class="login-v2-card-accent"></div>
+
+        <div class="login-v2-card-body">
+
+          <!-- Etape 1 : email -->
+          <ng-container *ngIf="etape() === 'EMAIL'">
+            <div class="login-v2-header-row">
+              <div>
+                <h3 class="login-v2-card-title">Bienvenue 👋</h3>
+                <p class="login-v2-card-subtitle">Connectez-vous a votre espace Medianet</p>
+              </div>
+              <div class="login-v2-header-icon">🔐</div>
+            </div>
+
+            <div class="login-v2-info-box">
+              <div class="login-v2-info-icon"><i class="bi bi-info-lg"></i></div>
+              <p>Saisissez votre adresse email professionnelle — nous vous envoyons un code de connexion a usage unique.</p>
+            </div>
+
+            <form [formGroup]="emailForm" (ngSubmit)="demanderOtp()">
+              <label class="login-v2-label">Adresse email professionnelle</label>
+              <div class="login-v2-input-wrap">
+                <i class="bi bi-envelope login-v2-input-icon"></i>
+                <input type="email" formControlName="email" placeholder="prenom.nom@medianet.tn" class="login-v2-input">
+              </div>
+
+              <button type="submit" class="login-v2-btn-primary" [disabled]="emailForm.invalid || chargement()">
+                <span *ngIf="chargement()" class="login-spinner"></span>
+                <i *ngIf="!chargement()" class="bi bi-send-fill"></i>
+                Recevoir le code de connexion
+              </button>
+
+              <div class="login-v2-divider"><span>ou</span></div>
+
+              <!-- Google Identity Services rend son propre bouton ici -->
+              <div #googleBtn class="login-google-btn"></div>
+            </form>
+
+            <p class="login-v2-security-note">
+              <i class="bi bi-shield-check"></i>
+              Connexion securisee — code OTP valable 5 minutes, usage unique
+            </p>
+          </ng-container>
+
+          <!-- Etape 2 : OTP -->
+          <ng-container *ngIf="etape() === 'OTP'">
+            <button type="button" class="login-back" (click)="retourEmail()">
+              <i class="bi bi-arrow-left"></i> Retour
+            </button>
+
+            <div class="login-v2-otp-header">
+              <div class="login-v2-otp-icon">✉️</div>
+              <h3 class="login-v2-card-title">Verifiez votre email</h3>
+              <p class="login-v2-card-subtitle">Code envoye a <strong>{{ emailSaisi }}</strong></p>
+            </div>
+
+            <div class="login-v2-otp-row">
+              <input *ngFor="let d of otpDigits(); let i = index; trackBy: trackByIndex"
+                     #otpInput
+                     type="text"
+                     inputmode="numeric"
+                     maxlength="1"
+                     class="login-v2-otp-box"
+                     [class.login-v2-otp-box--filled]="d"
+                     [value]="d"
+                     (input)="onDigitInput(i, $event)"
+                     (keydown)="onDigitKeydown(i, $event)"
+                     (paste)="onPaste(i, $event)"
+                     autocomplete="one-time-code">
+            </div>
+
+            <p class="login-v2-otp-hint">Code valide <strong>5 min</strong> · Usage unique · Verifiez vos spams</p>
+
+            <button type="button" class="login-v2-btn-primary" [disabled]="chargement()" (click)="verifierOtp()">
+              <span *ngIf="chargement()" class="login-spinner"></span>
+              <span *ngIf="!chargement()">Valider le code</span>
+            </button>
+
+            <button type="button" class="login-resend" (click)="renvoyerCode()" [disabled]="chargement()">
+              <i class="bi bi-arrow-repeat"></i> Renvoyer un nouveau code
+            </button>
+          </ng-container>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,16 @@
+<header class="page-topbar">
+  <div>
+    <h1 class="page-topbar-title">{{ titre }}</h1>
+    <p class="page-topbar-subtitle" *ngIf="sousTitre">{{ sousTitre }}</p>
+  </div>
+
+  <div class="page-topbar-actions">
+    <button class="page-topbar-bell" title="Notifications">
+      <i class="bi bi-bell"></i>
+      <span class="page-topbar-bell-dot"></span>
+    </button>
+    <button class="page-topbar-logout" (click)="deconnexion()">
+      Se deconnecter
+    </button>
+  </div>
+</header>

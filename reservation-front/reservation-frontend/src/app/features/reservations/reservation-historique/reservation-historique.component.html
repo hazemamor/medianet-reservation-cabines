@@ -1,0 +1,102 @@
+<app-page-header titre="Mes reservations" sousTitre="Historique et suivi de vos reservations"></app-page-header>
+
+<div class="page-container">
+
+  <div class="stats-row" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+    <div class="stat-card">
+      <div class="stat-dot-wrap" style="background:rgba(10,173,218,0.1);"><i class="bi bi-journal-text" style="color:var(--medianet-cyan); font-size:18px;"></i></div>
+      <div><p class="stat-value" style="color:var(--medianet-cyan);">{{ compteurs().total }}</p><p class="stat-label">Total</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-dot-wrap" style="background:#dcfce7;"><i class="bi bi-check-circle-fill" style="color:#16a34a; font-size:18px;"></i></div>
+      <div><p class="stat-value" style="color:#16a34a;">{{ compteurs().confirmees }}</p><p class="stat-label">Confirmees</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-dot-wrap" style="background:#fee2e2;"><i class="bi bi-x-circle-fill" style="color:#dc2626; font-size:18px;"></i></div>
+      <div><p class="stat-value" style="color:#dc2626;">{{ compteurs().annulees }}</p><p class="stat-label">Annulees</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-dot-wrap" style="background:rgba(245,166,35,0.12);"><i class="bi bi-hourglass-split" style="color:var(--medianet-orange); font-size:18px;"></i></div>
+      <div><p class="stat-value" style="color:var(--medianet-orange);">{{ compteurs().enAttente }}</p><p class="stat-label">En attente</p></div>
+    </div>
+  </div>
+
+  <div *ngIf="chargement()" style="text-align:center; margin-top:24px;">
+    <mat-spinner style="margin:0 auto;"></mat-spinner>
+  </div>
+
+  <div class="admin-table-card" *ngIf="!chargement()">
+    <div class="admin-table-header">
+      <div class="filter-tabs">
+        <button class="filter-tab" [class.filter-tab--active]="filtre() === 'TOUTES'" (click)="changerFiltre('TOUTES')">Toutes</button>
+        <button class="filter-tab" [class.filter-tab--active]="filtre() === 'EN_ATTENTE'" (click)="changerFiltre('EN_ATTENTE')">
+          En attente <span class="filter-tab-count">{{ compteurs().enAttente }}</span>
+        </button>
+        <button class="filter-tab" [class.filter-tab--active]="filtre() === 'CONFIRMEE'" (click)="changerFiltre('CONFIRMEE')">
+          Confirmees <span class="filter-tab-count">{{ compteurs().confirmees }}</span>
+        </button>
+        <button class="filter-tab" [class.filter-tab--active]="filtre() === 'ANNULEE'" (click)="changerFiltre('ANNULEE')">
+          Annulees <span class="filter-tab-count">{{ compteurs().annulees }}</span>
+        </button>
+      </div>
+      <p class="admin-table-count">{{ reservationsFiltrees().length }} reservation{{ reservationsFiltrees().length > 1 ? 's' : '' }}</p>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Cabine</th><th>Debut</th><th>Fin</th><th>Duree</th><th>Statut</th><th>Presence</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of reservationsFiltrees()">
+            <td>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div class="cabin-code-badge" [style.background]="couleurCabine(r.cabineNumero)">{{ r.cabineNumero }}</div>
+                <div>
+                  <div style="font-weight:600; font-size:13px;">{{ r.cabineNom }}</div>
+                  <div style="font-size:11px; color:var(--mn-muted-foreground);">{{ r.cabineNumero }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="font-size:13px;">{{ r.dateDebut | date:'dd/MM/yyyy' }}</div>
+              <div style="font-size:12px; font-weight:600; color:var(--medianet-cyan);">{{ r.dateDebut | date:'HH:mm' }}</div>
+            </td>
+            <td>
+              <div style="font-size:13px;">{{ r.dateFin | date:'dd/MM/yyyy' }}</div>
+              <div style="font-size:12px; font-weight:600; color:var(--mn-muted-foreground);">{{ r.dateFin | date:'HH:mm' }}</div>
+            </td>
+            <td><span class="mini-chip">{{ duree(r.dateDebut, r.dateFin) }}</span></td>
+            <td><span class="mini-badge" [ngClass]="statutClasse(r.statut)">{{ statutLabel(r.statut) }}</span></td>
+            <td>
+              <span class="mini-badge" [ngClass]="r.presenceConfirmee ? 'mini-badge--green' : ''"
+                    [style.background]="!r.presenceConfirmee ? 'var(--mn-muted)' : null"
+                    [style.color]="!r.presenceConfirmee ? 'var(--mn-muted-foreground)' : null">
+                {{ r.presenceConfirmee ? '✓ Confirmee' : 'Non confirmee' }}
+              </span>
+            </td>
+            <td>
+              <div style="display:flex; gap:4px;">
+                <button class="icon-btn icon-btn--cyan" *ngIf="peutConfirmerPresence(r)"
+                        [disabled]="actionEnCours() === r.id" (click)="confirmerPresence(r)" title="Confirmer presence">
+                  <i class="bi bi-check-lg"></i>
+                </button>
+                <button class="icon-btn icon-btn--red" *ngIf="peutAnnuler(r)"
+                        [disabled]="actionEnCours() === r.id" (click)="annuler(r)" title="Annuler">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="reservationsFiltrees().length === 0">
+            <td colspan="7" style="text-align:center; padding:48px; color:var(--mn-muted-foreground);">
+              Aucune reservation dans cette categorie
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

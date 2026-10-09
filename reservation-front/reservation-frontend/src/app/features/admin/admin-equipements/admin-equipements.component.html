@@ -1,0 +1,82 @@
+<app-page-header titre="Gestion des equipements" sousTitre="Creer, modifier et gerer les equipements"></app-page-header>
+
+<div class="page-container">
+
+  <div class="toast-notification" *ngIf="toast()">{{ toast() }}</div>
+
+  <div class="admin-form-card" style="max-width:800px;">
+    <div class="admin-form-header">
+      <div class="admin-form-icon" style="background: linear-gradient(135deg, var(--medianet-orange), #d97706);">
+        <i class="bi bi-tools"></i>
+      </div>
+      <div>
+        <h2 style="margin:0;">{{ enEdition() ? "Modifier l'equipement" : 'Nouvel equipement' }}</h2>
+        <p class="admin-form-subtitle">Ajoutez un equipement disponible dans les cabines</p>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="enregistrer()" class="admin-form-body">
+      <div class="admin-form-grid-2">
+        <div class="admin-field">
+          <label>Nom *</label>
+          <input formControlName="nom" placeholder="ex: Television 55 pouces" class="admin-input">
+        </div>
+        <div class="admin-field">
+          <label>Description</label>
+          <input formControlName="description" placeholder="Details de l'equipement..." class="admin-input">
+        </div>
+      </div>
+
+      <div class="admin-form-actions">
+        <button type="submit" class="btn-admin-primary" [disabled]="form.invalid">
+          {{ enEdition() ? 'Mettre a jour' : "Creer l'equipement" }}
+        </button>
+        <button type="button" class="btn-admin-cancel" *ngIf="enEdition()" (click)="annulerEdition()">
+          Annuler
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="chargement()" style="text-align:center; margin-top:24px;">
+    <mat-spinner style="margin:0 auto;"></mat-spinner>
+  </div>
+
+  <div class="admin-table-card" *ngIf="!chargement()" style="max-width:800px;">
+    <div class="admin-table-header">
+      <p class="admin-table-count">
+        {{ equipements().length }} equipement{{ equipements().length > 1 ? 's' : '' }} disponible{{ equipements().length > 1 ? 's' : '' }}
+      </p>
+    </div>
+
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Equipement</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let e of equipements()">
+          <td>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="equip-icon-box">{{ iconePour(e.nom) }}</div>
+              <span style="font-weight:600;">{{ e.nom }}</span>
+            </div>
+          </td>
+          <td style="color:var(--mn-muted-foreground);">
+            <span *ngIf="e.description">{{ e.description }}</span>
+            <span *ngIf="!e.description" style="font-style:italic; opacity:0.6;">Aucune description</span>
+          </td>
+          <td>
+            <div style="display:flex; gap:4px;">
+              <button class="icon-btn icon-btn--cyan" (click)="editer(e)" title="Modifier"><i class="bi bi-pencil"></i></button>
+              <button class="icon-btn icon-btn--red" (click)="supprimer(e)" title="Supprimer"><i class="bi bi-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

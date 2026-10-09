@@ -1,0 +1,91 @@
+<ng-container *ngIf="authService.isAuthenticated()">
+
+  <div class="chat-widget" *ngIf="ouvert()">
+
+    <div class="header-bar">
+      <div class="orange"></div>
+      <div class="cyan"></div>
+    </div>
+
+    <div class="chat-header">
+      <div class="header-left">
+        <div class="bot-avatar">
+          <div class="avatar-bg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.5"/><circle cx="15" cy="14" r="1.5"/>
+            </svg>
+          </div>
+          <div class="status-dot"></div>
+        </div>
+        <div class="header-title">
+          <h3>Assistant Medianet</h3>
+          <p>Assistant de réservation</p>
+        </div>
+      </div>
+      <button class="close-btn" (click)="basculer()" title="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="chat-history" #zoneMessages>
+      <ng-container *ngFor="let m of messages()">
+
+        <div class="message-row" [class.user]="m.auteur === 'utilisateur'">
+          <div class="message-avatar" *ngIf="m.auteur === 'bot'">
+            <div class="avatar-bg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.5"/><circle cx="15" cy="14" r="1.5"/>
+              </svg>
+            </div>
+            <div class="status-dot"></div>
+          </div>
+          <div class="bot-bubble" *ngIf="m.auteur === 'bot'">{{ m.texte }}</div>
+          <div class="user-bubble" *ngIf="m.auteur === 'utilisateur'">{{ m.texte }}</div>
+        </div>
+
+        <div class="suggestions" *ngIf="m.suggestions?.length">
+          <button class="chip" *ngFor="let s of m.suggestions" (click)="envoyerSuggestion(s)">{{ s }}</button>
+        </div>
+
+      </ng-container>
+
+      <div class="message-row" *ngIf="enAttente()">
+        <div class="message-avatar">
+          <div class="avatar-bg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.5"/><circle cx="15" cy="14" r="1.5"/>
+            </svg>
+          </div>
+          <div class="status-dot"></div>
+        </div>
+        <div class="bot-bubble bot-bubble--chargement">
+          <mat-spinner diameter="16"></mat-spinner>
+        </div>
+      </div>
+    </div>
+
+    <form class="composer" (ngSubmit)="envoyer()">
+      <div class="input-field">
+        <input type="text" [(ngModel)]="saisie" name="saisie" placeholder="Posez votre question..." autocomplete="off">
+      </div>
+      <button class="send-btn" type="submit" [disabled]="enAttente() || !saisie.trim()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </form>
+
+  </div>
+
+  <button class="fab" (click)="basculer()" title="Assistant Medianet">
+    <svg *ngIf="!ouvert()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+    </svg>
+    <svg *ngIf="ouvert()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+
+</ng-container>
